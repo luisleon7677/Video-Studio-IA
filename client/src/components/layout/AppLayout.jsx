@@ -1,21 +1,31 @@
-import { useState, useEffect } from 'react'
-import { Outlet, useLocation } from 'react-router-dom'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import Sidebar from './Sidebar'
 import Header from './Header'
 import { navItems } from '../../data/navigation'
+import { getActiveNavItem } from '../../utils/navigation'
+import { useTheme } from '../../hooks/useTheme'
+import { useAuth } from '../../hooks/useAuth'
 
 export default function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [isDark, setIsDark] = useState(false)
+  const { isDark, toggleTheme } = useTheme()
+  const { user, logout } = useAuth()
+  const navigate = useNavigate()
   const location = useLocation()
 
-  const currentModule = navItems.find(
-    (item) => item.path === location.pathname || (item.path !== '/' && location.pathname.startsWith(item.path))
-  ) ?? navItems[0]
+  const currentModule = useMemo(
+    () => getActiveNavItem(location.pathname, navItems),
+    [location.pathname],
+  )
 
-  useEffect(() => {
-    document.documentElement.classList.toggle('dark', isDark)
-  }, [isDark])
+  const openSidebar = useCallback(() => setSidebarOpen(true), [])
+  const closeSidebar = useCallback(() => setSidebarOpen(false), [])
+
+  const handleLogout = useCallback(() => {
+    logout()
+    navigate('/login', { replace: true, state: { from: location.pathname } })
+  }, [logout, navigate, location.pathname])
 
   useEffect(() => {
     setSidebarOpen(false)
@@ -23,18 +33,20 @@ export default function AppLayout() {
 
   return (
     <div className="flex min-h-screen bg-background">
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <Sidebar isOpen={sidebarOpen} onClose={closeSidebar} />
 
       <div className="flex min-w-0 flex-1 flex-col">
         <Header
           title={currentModule.label}
           subtitle={currentModule.description}
-          onMenuClick={() => setSidebarOpen(true)}
+          onMenuClick={openSidebar}
           isDark={isDark}
-          onToggleTheme={() => setIsDark((prev) => !prev)}
+          onToggleTheme={toggleTheme}
+          user={user}
+          onLogout={handleLogout}
         />
 
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6">
+        <main className="flex-1 overflow-y-auto px-4 py-5 sm:px-6 sm:py-6">
           <Outlet />
         </main>
       </div>
