@@ -1,6 +1,7 @@
 import { Composition, staticFile } from "remotion";
 import { Scene, myCompSchema } from "./Scene";
 import { TopScorersChart } from "./TopScorersChart";
+import { SalesPresentation } from "./SalesPresentation";
 import { getMediaMetadata } from "./helpers/get-media-metadata";
 
 // Welcome to the Remotion Three Starter Kit!
@@ -21,6 +22,14 @@ import { getMediaMetadata } from "./helpers/get-media-metadata";
 export const RemotionRoot: React.FC = () => {
   return (
     <>
+      <Composition
+        id="SalesPresentation"
+        component={SalesPresentation}
+        fps={30}
+        durationInFrames={360}
+        width={1920}
+        height={1080}
+      />
       <Composition
         id="TopScorersChart"
         component={TopScorersChart}
