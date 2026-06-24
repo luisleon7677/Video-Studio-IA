@@ -8,6 +8,7 @@ export const AiProcessingPage = lazy(() => import('../pages/AiProcessing'))
 export const VideoHistoryPage = lazy(() => import('../pages/VideoHistory'))
 export const LoginPage = lazy(() => import('../pages/Login'))
 export const RegisterPage = lazy(() => import('../pages/Register'))
+export const AnimationPage = lazy(()=> import('../pages/Animations'))
 
 /** Precarga el chunk de la ruta en hover/focus (bundle-preload). */
 export const routePreloaders = {
@@ -17,4 +18,5 @@ export const routePreloaders = {
   '/procesamiento-ia': () => import('../pages/AiProcessing'),
   '/historial-videos': () => import('../pages/VideoHistory'),
   '/historial-ventas': () => import('../pages/SalesHistory'),
+  '/animations':()=>import('../pages/Animations')
 }

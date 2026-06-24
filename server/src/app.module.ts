@@ -32,11 +32,18 @@ import { JwtTokenService } from './modules/users/infrastructure/security/jwt-tok
 import { RegisterAdminUseCase } from './modules/users/application/use-cases/register-admin.use-case';
 import { LoginUseCase } from './modules/users/application/use-cases/login.use-case';
 import { JwtAuthGuard } from './modules/users/presentation/guards/jwt-auth.guard';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 
 
 
 @Module({
-  imports: [],
+  imports: [
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', '..', 'remotion', 'videos'),
+      serveRoot: '/videos',
+    }),
+  ],
   controllers: [AppController, VideoController, TemplateController, SaleController, AuthController],
   providers: [
     AppService,

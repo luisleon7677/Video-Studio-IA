@@ -13,6 +13,7 @@ import {
   SalesHistoryPage,
   LoginPage,
   RegisterPage,
+  AnimationPage
 } from './routes/lazyPages'
 
 export default function App() {
@@ -55,6 +56,16 @@ export default function App() {
                   </Suspense>
                 }
               />
+
+              <Route
+              path='animations'
+              element={
+                <Suspense fallback={<PageLoader/>}>
+                  <AnimationPage></AnimationPage>
+                </Suspense>
+              }
+              >
+              </Route>
               <Route
                 path="procesamiento-ia"
                 element={

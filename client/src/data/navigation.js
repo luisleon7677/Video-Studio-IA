@@ -8,13 +8,13 @@ export const navItems = [
     icon: LayoutDashboard,
     description: 'Resumen general del sistema',
   },
-  // {
-  //   id: 'video-editing',
-  //   label: 'Edición de Video',
-  //   path: '/edicion-video',
-  //   icon: Film,
-  //   description: 'Carga, detección de momentos y corte manual',
-  // },
+  {
+    id: 'animations',
+    label: 'Animaciones Remotion',
+    path: '/animations',
+    icon: Film,
+    description: 'Plantillas de remotion',
+  },
   {
     id: 'templates',
     label: 'Plantillas',

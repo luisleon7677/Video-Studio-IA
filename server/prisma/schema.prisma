@@ -10,9 +10,9 @@ datasource db {
 model User {
   id        Int         @id @default(autoincrement())
   name      String?     @db.VarChar(120)
-  email     String?     @unique @db.VarChar(120)
-  code      String      @unique @db.VarChar(100)
-  password  String?     @db.VarChar(255)
+  email     String?     @db.VarChar(120)
+  code      String?     @db.VarChar(100)
+  password  String?     @db.VarChar(120)
   templates templates[]
   videos    Video[]
 
@@ -37,12 +37,6 @@ model Video {
   @@index([type], map: "videos_types_videos_FK")
   @@index([id_admin], map: "videos_users_FK")
   @@map("videos")
-}
-
-model migrations {
-  id        Int    @id @default(autoincrement())
-  timestamp BigInt
-  name      String @db.VarChar(255)
 }
 
 model sales {
@@ -79,4 +73,12 @@ model types_videos {
   name        String? @db.VarChar(150)
   description String? @db.VarChar(250)
   videos      Video[]
+}
+
+model sellers {
+  id       Int     @id @default(autoincrement())
+  name     String? @db.VarChar(120)
+  company  String? @db.VarChar(120)
+  code     String? @db.VarChar(100)
+  id_admin Int?
 }
