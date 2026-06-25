@@ -11,6 +11,7 @@ import {
   AiProcessingPage,
   VideoHistoryPage,
   SalesHistoryPage,
+  SellersPage,
   LoginPage,
   RegisterPage,
   AnimationPage
@@ -90,7 +91,14 @@ export default function App() {
                   </Suspense>
                 }
               />
-              <Route path="vendedores" element={<Navigate to="/historial-ventas" replace />} />
+              <Route
+                path="vendedores"
+                element={
+                  <Suspense fallback={<PageLoader />}>
+                    <SellersPage />
+                  </Suspense>
+                }
+              />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Route>
           </Route>

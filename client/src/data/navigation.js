@@ -1,4 +1,4 @@
-import { LayoutDashboard, Film, LayoutTemplate, Receipt, Sparkles, History } from 'lucide-react'
+import { LayoutDashboard, Film, LayoutTemplate, Receipt, Sparkles, History, UsersRound } from 'lucide-react'
 
 export const navItems = [
   {
@@ -42,5 +42,12 @@ export const navItems = [
     path: '/historial-ventas',
     icon: Receipt,
     description: 'Ventas por vendedor, código y canal',
+  },
+  {
+    id: 'sellers',
+    label: 'Vendedores',
+    path: '/vendedores',
+    icon: UsersRound,
+    description: 'Directorio de vendedores por empresa',
   },
 ]
