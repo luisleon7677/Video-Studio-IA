@@ -6,8 +6,10 @@ import { PrismaService } from './database/prisma.service';
 
 import { VideoController } from './modules/videos/presentation/controllers/video.controller';
 import { CreateVideoUseCase } from './modules/videos/application/use-cases/create-video.use-case';
+import { ListCapcutVideosBySellerUseCase } from './modules/videos/application/use-cases/list-capcut-videos-by-seller.use-case';
 import { VideoRepository } from './modules/videos/domain/repositories/video.repository';
 import { PrismaVideoRepository } from './modules/videos/infrastructure/presistence/prisma-video.repository';
+import { S3Service } from './modules/videos/infrastructure/storage/s3.service';
 import { TemplateRepository } from './modules/templates/domain/repositories/template.repository';
 import { PrismaTemplateRepository } from './modules/templates/infrastructure/persistence/prisma-template.repository';
 import { TemplateController } from './modules/templates/presentation/controllers/template.controller';
@@ -53,6 +55,7 @@ import { GetSellerByIdUseCase } from './modules/sellers/application/use-cases/ge
   providers: [
     AppService,
     PrismaService,
+    S3Service,
     {
       provide: TemplateRepository,
       useFactory: (prisma: PrismaService) => new PrismaTemplateRepository(prisma),
@@ -67,6 +70,12 @@ import { GetSellerByIdUseCase } from './modules/sellers/application/use-cases/ge
       provide: CreateVideoUseCase,
       useFactory: (videoRepository: VideoRepository) =>
         new CreateVideoUseCase(videoRepository),
+      inject: [VideoRepository],
+    },
+    {
+      provide: ListCapcutVideosBySellerUseCase,
+      useFactory: (videoRepository: VideoRepository) =>
+        new ListCapcutVideosBySellerUseCase(videoRepository),
       inject: [VideoRepository],
     },
     {

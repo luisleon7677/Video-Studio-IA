@@ -10,9 +10,26 @@ export class PrismaVideoRepository implements VideoRepository {
       data: {
         name: video.name,
         url: video.url,
+        id_admin: video.idAdmin,
+        id_template: video.idTemplate,
+        type: video.type,
+        status: video.status,
+        id_seller: video.idSeller,
       },
     });
 
-    return new Video(savedVideo.id, savedVideo.name, savedVideo.url);
+    return Video.fromPersistence(savedVideo);
+  }
+
+  async findCapcutBySellerId(sellerId: number): Promise<Video[]> {
+    const rows = await this.prisma.video.findMany({
+      where: {
+        id_seller: sellerId,
+        type: 2,
+      },
+      orderBy: { id: 'desc' },
+    });
+
+    return rows.map((row) => Video.fromPersistence(row));
   }
 }

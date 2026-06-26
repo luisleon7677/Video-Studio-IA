@@ -27,6 +27,8 @@ model Video {
   id_template  Int?
   type         Int?
   status       Int?
+  id_seller    Int?
+  sellers      sellers?      @relation(fields: [id_seller], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "videos_sellers_FK")
   states_video states_video? @relation(fields: [status], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "videos_states_video_FK")
   templates    templates?    @relation(fields: [id_template], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "videos_templates_FK")
   types_videos types_videos? @relation(fields: [type], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "videos_types_videos_FK")
@@ -36,6 +38,7 @@ model Video {
   @@index([id_template], map: "videos_templates_FK")
   @@index([type], map: "videos_types_videos_FK")
   @@index([id_admin], map: "videos_users_FK")
+  @@index([id_seller], map: "videos_sellers_FK")
   @@map("videos")
 }
 
@@ -81,4 +84,5 @@ model sellers {
   company  String? @db.VarChar(120)
   code     String? @db.VarChar(100)
   id_admin Int?
+  videos   Video[]
 }

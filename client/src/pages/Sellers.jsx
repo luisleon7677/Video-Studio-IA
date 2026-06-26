@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, useTransition } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react'
 import {
   ArrowLeft,
   BadgeCheck,
@@ -6,7 +6,9 @@ import {
   ChevronLeft,
   ChevronRight,
   Clapperboard,
+  LoaderCircle,
   Search,
+  Upload,
   UserRound,
   UsersRound,
 } from 'lucide-react'
@@ -15,7 +17,7 @@ import Panel from '../components/ui/Panel'
 import Button from '../components/ui/Button'
 import MetricTile from '../components/ui/MetricTile'
 import ChannelBadge from '../components/sales/ChannelBadge'
-import { fetchSellerById, fetchSellers } from '../api/sellers'
+import { fetchSellerById, fetchSellers, uploadSellerVideo } from '../api/sellers'
 import { getCompanyAccentClass } from '../utils/companyColors'
 
 const PAGE_SIZE = 8
@@ -270,7 +272,40 @@ function LoadingCards() {
 }
 
 function SellerDetail({ seller, isLoading, error, onBack }) {
-  const videos = seller.videos ?? []
+  const fileInputRef = useRef(null)
+  const [videos, setVideos] = useState(() => seller.videos ?? [])
+  const [isUploading, setIsUploading] = useState(false)
+  const [uploadError, setUploadError] = useState('')
+  const [uploadSuccess, setUploadSuccess] = useState('')
+
+  useEffect(() => {
+    setVideos(seller.videos ?? [])
+  }, [seller])
+
+  async function handleUploadVideo(event) {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    setUploadError('')
+    setUploadSuccess('')
+    setIsUploading(true)
+
+    try {
+      const createdVideo = await uploadSellerVideo({
+        sellerId: seller.id,
+        file,
+        name: file.name.replace(/\.[^.]+$/, ''),
+      })
+
+      setVideos((currentVideos) => [createdVideo, ...currentVideos])
+      setUploadSuccess(`Video subido correctamente: ${createdVideo.name || file.name}`)
+    } catch (uploadError) {
+      setUploadError(uploadError.message || 'No se pudo subir el video del vendedor.')
+    } finally {
+      setIsUploading(false)
+      event.target.value = ''
+    }
+  }
 
   return (
     <div className="mx-auto max-w-6xl space-y-5">
@@ -316,23 +351,57 @@ function SellerDetail({ seller, isLoading, error, onBack }) {
                 {videos.length} archivos vinculados
               </p>
             </div>
-            <div className="flex size-9 items-center justify-center rounded-md bg-muted text-muted-foreground">
-              <Clapperboard className="size-4" />
+            <div className="flex items-center gap-2">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="video/*"
+                className="hidden"
+                onChange={handleUploadVideo}
+              />
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploading}
+              >
+                {isUploading ? <LoaderCircle className="size-3.5 animate-spin" /> : <Upload className="size-3.5" />}
+                {isUploading ? 'Subiendo...' : 'Subir video'}
+              </Button>
+              <div className="flex size-9 items-center justify-center rounded-md bg-muted text-muted-foreground">
+                <Clapperboard className="size-4" />
+              </div>
             </div>
           </div>
+
+          {uploadError ? <p className="px-5 pt-4 text-sm text-destructive">{uploadError}</p> : null}
+          {uploadSuccess ? <p className="px-5 pt-4 text-sm text-emerald-600">{uploadSuccess}</p> : null}
 
           {isLoading ? (
             <p className="px-5 py-8 text-sm text-muted-foreground">Cargando vendedor...</p>
           ) : videos.length > 0 ? (
             <div className="grid gap-3 p-5 sm:grid-cols-2">
-              {videos.map((url) => (
-                <video
-                  key={url}
-                  src={url}
-                  controls
-                  className="aspect-video w-full rounded-md border border-border-subtle bg-viewport"
-                />
-              ))}
+              {videos.map((video) => {
+                const videoUrl = typeof video === 'string' ? video : video.url
+                const videoName = typeof video === 'string' ? 'Video CapCut' : video.name
+
+                return (
+                  <div
+                    key={typeof video === 'string' ? video : video.id}
+                    className="overflow-hidden rounded-md border border-border-subtle bg-input"
+                  >
+                    <video
+                      src={videoUrl}
+                      controls
+                      className="aspect-video w-full bg-viewport"
+                    />
+                    <div className="border-t border-border-subtle px-3 py-2">
+                      <p className="truncate text-xs font-semibold">{videoName}</p>
+                      <p className="studio-timecode mt-1">CapCut tipo 2</p>
+                    </div>
+                  </div>
+                )
+              })}
             </div>
           ) : (
             <div className="grid gap-3 p-5 sm:grid-cols-3">

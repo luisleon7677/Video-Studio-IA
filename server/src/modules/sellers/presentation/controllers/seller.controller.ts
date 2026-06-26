@@ -9,12 +9,15 @@ import {
 import { GetSellerByIdUseCase } from '../../application/use-cases/get-seller-by-id.use-case';
 import { ListSellersUseCase } from '../../application/use-cases/list-sellers.use-case';
 import { ListSellersQueryDto } from '../dto/list-sellers-query.dto';
+import { ListCapcutVideosBySellerUseCase } from '../../../videos/application/use-cases/list-capcut-videos-by-seller.use-case';
+import { Video } from '../../../videos/domain/entities/video.entity';
 
 @Controller('sellers')
 export class SellerController {
   constructor(
     private readonly listSellersUseCase: ListSellersUseCase,
     private readonly getSellerByIdUseCase: GetSellerByIdUseCase,
+    private readonly listCapcutVideosBySellerUseCase: ListCapcutVideosBySellerUseCase,
   ) {}
 
   @Get()
@@ -42,7 +45,8 @@ export class SellerController {
   async getById(@Param('id', ParseIntPipe) id: number) {
     try {
       const seller = await this.getSellerByIdUseCase.execute(id);
-      return this.toResponse(seller);
+      const videos = await this.listCapcutVideosBySellerUseCase.execute(id);
+      return this.toResponse(seller, videos);
     } catch (error) {
       if (error instanceof Error && error.message === 'Vendedor no encontrado') {
         throw new NotFoundException(error.message);
@@ -57,14 +61,21 @@ export class SellerController {
     company: string;
     code: string;
     idAdmin: number | null;
-  }) {
+  }, videos: Video[] = []) {
     return {
       id: seller.id,
       name: seller.name,
       company: seller.company,
       code: seller.code,
       idAdmin: seller.idAdmin,
-      videos: [],
+      videos: videos.map((video) => ({
+        id: video.id,
+        name: video.name,
+        url: video.url,
+        type: video.type,
+        status: video.status,
+        idSeller: video.idSeller,
+      })),
     };
   }
 }
