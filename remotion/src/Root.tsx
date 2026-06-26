@@ -5,6 +5,7 @@ import { SalesPresentation } from "./SalesPresentation";
 import { getMediaMetadata } from "./helpers/get-media-metadata";
 import { NombreScene } from "./Name";
 import { VideoBackground } from "./VideoScene"
+import { SaleCelebration } from "./SalesCelebration"
 
 // Welcome to the Remotion Three Starter Kit!
 // Two compositions have been created, showing how to use
@@ -26,6 +27,16 @@ export const RemotionRoot: React.FC = () => {
     <>
 
 
+
+
+      <Composition
+        id="SaleCelebration"
+        component={SaleCelebration}
+        durationInFrames={390} // 13 segundos
+        fps={30}
+        width={1920}
+        height={1080}
+      />
       <Composition
         id="VideoBackground"
         component={VideoBackground}
