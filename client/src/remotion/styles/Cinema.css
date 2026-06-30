@@ -1,0 +1,180 @@
+.cinemaScene {
+  background-color: #05060a;
+  color: #ffffff;
+  overflow: hidden;
+}
+
+.cinemaScene__videoLayer {
+  transform-origin: 52% 50%;
+}
+
+.cinemaScene__video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.cinemaScene__sideShade {
+  background: linear-gradient(
+    90deg,
+    rgba(5, 6, 10, 0.72) 0%,
+    rgba(5, 6, 10, 0.18) 48%,
+    rgba(5, 6, 10, 0.62) 100%
+  );
+}
+
+.cinemaScene__ambientGlow {
+  background: radial-gradient(
+    circle at 54% 38%,
+    rgba(255, 255, 255, 0.2),
+    rgba(248, 197, 55, 0.14) 22%,
+    rgba(5, 6, 10, 0) 58%
+  );
+}
+
+.cinemaScene__saleGlow {
+  background: radial-gradient(
+    ellipse at 52% 54%,
+    rgba(248, 197, 55, 0) 0%,
+    rgba(248, 197, 55, 0.16) 42%,
+    rgba(5, 6, 10, 0) 66%
+  );
+}
+
+.cinemaScene__beam {
+  position: absolute;
+  width: 760px;
+  height: 8px;
+  border-radius: 999px;
+}
+
+.cinemaScene__beam--gold {
+  background: linear-gradient(
+    90deg,
+    rgba(248, 197, 55, 0),
+    rgba(248, 197, 55, 0.62),
+    rgba(248, 197, 55, 0)
+  );
+}
+
+.cinemaScene__beam--blue {
+  background: linear-gradient(
+    90deg,
+    rgba(72, 168, 255, 0),
+    rgba(72, 168, 255, 0.42),
+    rgba(72, 168, 255, 0)
+  );
+}
+
+.cinemaScene__focusRing {
+  position: absolute;
+  left: 52%;
+  top: 47%;
+  border-radius: 999px;
+  box-shadow: 0 0 28px rgba(248, 197, 55, 0.3);
+}
+
+.cinemaScene__confetti {
+  position: absolute;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.2);
+}
+
+.cinemaScene__burst {
+  position: absolute;
+  left: 52%;
+  top: 48%;
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+}
+
+.cinemaScene__badgeLayout {
+  justify-content: flex-end;
+  align-items: flex-end;
+  padding: 0 58px 48px 0;
+  pointer-events: none;
+}
+
+.cinemaScene__badge {
+  width: 510px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 22px;
+  padding: 24px 28px 26px;
+  background: linear-gradient(145deg, rgba(10, 12, 18, 0.93), rgba(25, 28, 39, 0.78));
+  box-shadow:
+    0 26px 80px rgba(0, 0, 0, 0.44),
+    0 0 70px rgba(248, 197, 55, 0.28);
+}
+
+.cinemaScene__status {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  height: 34px;
+  border: 1px solid rgba(50, 212, 164, 0.44);
+  border-radius: 999px;
+  padding: 0 16px;
+  background-color: rgba(50, 212, 164, 0.16);
+  color: #7cffd9;
+  font-size: 15px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.cinemaScene__statusDot {
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background-color: #32d4a4;
+  box-shadow: 0 0 18px #32d4a4;
+}
+
+.cinemaScene__title {
+  margin-top: 14px;
+  font-size: 40px;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: 0;
+}
+
+.cinemaScene__meta {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 18px;
+  margin-top: 16px;
+}
+
+.cinemaScene__label {
+  color: rgba(255, 255, 255, 0.64);
+  font-size: 14px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.cinemaScene__seller {
+  margin-top: 6px;
+  font-size: 28px;
+  font-weight: 900;
+}
+
+.cinemaScene__saleCode {
+  color: #f8c537;
+  font-size: 31px;
+  font-weight: 900;
+  text-shadow: 0 0 26px rgba(248, 197, 55, 0.34);
+}
+
+.cinemaScene__flash {
+  background-color: #ffffff;
+}
+
+.cinemaScene__topShade {
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.08) 0%,
+    rgba(255, 255, 255, 0) 20%,
+    rgba(0, 0, 0, 0.32) 100%
+  );
+}

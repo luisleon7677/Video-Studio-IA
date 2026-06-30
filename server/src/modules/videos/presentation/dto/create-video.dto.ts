@@ -1,5 +1,13 @@
 import { Type } from 'class-transformer';
-import { IsInt, IsNotEmpty, IsOptional, IsPositive, IsString, MinLength } from 'class-validator';
+import {
+  IsInt,
+  IsNotEmpty,
+  IsObject,
+  IsOptional,
+  IsPositive,
+  IsString,
+  MinLength,
+} from 'class-validator';
 
 export class CreateVideoDto {
   @IsNotEmpty()
@@ -92,4 +100,28 @@ export class UploadCapcutVideoDto {
   @IsInt()
   @IsPositive()
   status?: number;
+}
+
+export class UploadAnimationVideoDto {
+  @IsOptional()
+  @MinLength(3)
+  name?: string;
+
+  @IsOptional()
+  @IsString()
+  templateId?: string;
+}
+
+export class RenderAnimationVideoDto {
+  @IsNotEmpty()
+  @IsString()
+  compositionId: string;
+
+  @IsOptional()
+  @IsString()
+  templateId?: string;
+
+  @IsOptional()
+  @IsObject()
+  inputProps?: Record<string, unknown>;
 }

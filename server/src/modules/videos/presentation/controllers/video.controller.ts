@@ -1,9 +1,16 @@
 import { BadRequestException, Body, Controller, Post, UploadedFile, UseInterceptors } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { CreateCapcutVideoDto, CreateVideoDto, UploadCapcutVideoDto } from '../dto/create-video.dto';
+import {
+  CreateCapcutVideoDto,
+  CreateVideoDto,
+  RenderAnimationVideoDto,
+  UploadAnimationVideoDto,
+  UploadCapcutVideoDto,
+} from '../dto/create-video.dto';
 import { CreateVideoUseCase } from '../../application/use-cases/create-video.use-case';
 import { S3Service } from '../../infrastructure/storage/s3.service';
 import { Video } from '../../domain/entities/video.entity';
+import { RemotionService } from '../../infrastructure/remotion/service.remotion';
 
 interface UploadedVideoFile {
   buffer: Buffer;
@@ -16,6 +23,7 @@ export class VideoController {
   constructor(
     private readonly createVideoUseCase: CreateVideoUseCase,
     private readonly s3Service: S3Service,
+    private readonly remotionService: RemotionService,
   ) {}
 
   @Post()
@@ -78,6 +86,43 @@ export class VideoController {
     });
 
     return this.toResponse(video);
+  }
+
+  @Post('animations/upload')
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadAnimation(
+    @UploadedFile() file: UploadedVideoFile | undefined,
+    @Body() dto: UploadAnimationVideoDto,
+  ) {
+    if (!file) {
+      throw new BadRequestException('El archivo de video es obligatorio');
+    }
+
+    if (!file.mimetype?.startsWith('video/')) {
+      throw new BadRequestException('El archivo debe ser un video');
+    }
+
+    const url = await this.s3Service.uploadAnimationVideo({
+      buffer: file.buffer,
+      originalName: file.originalname,
+      contentType: file.mimetype,
+      templateId: dto.templateId,
+    });
+
+    return {
+      name: dto.name ?? file.originalname.replace(/\.[^.]+$/, ''),
+      url,
+      templateId: dto.templateId,
+    };
+  }
+
+  @Post('animations/render')
+  async renderAnimation(@Body() dto: RenderAnimationVideoDto) {
+    return this.remotionService.requestRender({
+      compositionId: dto.compositionId,
+      templateId: dto.templateId,
+      inputProps: dto.inputProps,
+    });
   }
 
   private toResponse(video: Video) {

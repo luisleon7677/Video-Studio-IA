@@ -7,11 +7,19 @@ export interface UploadVideoFileInput {
   sellerId: number;
 }
 
+export interface UploadAnimationVideoFileInput {
+  buffer: Buffer;
+  originalName: string;
+  contentType?: string;
+  templateId?: string;
+}
+
 export class S3Service {
   private readonly client: S3Client;
   private readonly bucket: string;
   private readonly region: string;
   private readonly capcutPath: string;
+  private readonly animationPath: string;
 
   constructor() {
     this.region = process.env.AWS_REGION ?? 'us-east-1';
@@ -22,6 +30,9 @@ export class S3Service {
     this.capcutPath =
       process.env.AWS_CAPCUT_VIDEOS_BUCKET_PATH ??
       this.joinPath(process.env.AWS_S3_BUCKET_PATH ?? '', 'capcut_videos');
+    this.animationPath =
+      process.env.AWS_ANIMATION_VIDEOS_BUCKET_PATH ??
+      this.joinPath(process.env.AWS_S3_BUCKET_PATH ?? '', 'animation_videos');
 
     this.client = new S3Client({
       region: this.region,
@@ -54,6 +65,30 @@ export class S3Service {
     return `https://${this.bucket}.s3.${this.region}.amazonaws.com/${key}`;
   }
 
+  async uploadAnimationVideo(
+    input: UploadAnimationVideoFileInput,
+  ): Promise<string> {
+    if (!this.bucket) {
+      throw new Error('AWS bucket no configurado');
+    }
+
+    const key = this.buildAnimationVideoKey(
+      input.templateId,
+      input.originalName,
+    );
+
+    await this.client.send(
+      new PutObjectCommand({
+        Bucket: this.bucket,
+        Key: key,
+        Body: input.buffer,
+        ContentType: input.contentType ?? 'video/mp4',
+      }),
+    );
+
+    return `https://${this.bucket}.s3.${this.region}.amazonaws.com/${key}`;
+  }
+
   private buildCapcutVideoKey(sellerId: number, originalName: string): string {
     const extension = this.getExtension(originalName);
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
@@ -61,6 +96,19 @@ export class S3Service {
     const filename = `${timestamp}-${safeName || 'video'}${extension}`;
 
     return this.joinPath(this.capcutPath, `seller-${sellerId}`, filename);
+  }
+
+  private buildAnimationVideoKey(
+    templateId: string | undefined,
+    originalName: string,
+  ): string {
+    const extension = this.getExtension(originalName);
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const safeName = this.sanitizeFileName(originalName.replace(/\.[^.]+$/, ''));
+    const safeTemplate = this.sanitizeFileName(templateId ?? 'template');
+    const filename = `${timestamp}-${safeName || 'video'}${extension}`;
+
+    return this.joinPath(this.animationPath, safeTemplate, filename);
   }
 
   private getExtension(fileName: string): string {

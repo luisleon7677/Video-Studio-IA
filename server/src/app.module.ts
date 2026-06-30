@@ -34,28 +34,23 @@ import { JwtTokenService } from './modules/users/infrastructure/security/jwt-tok
 import { RegisterAdminUseCase } from './modules/users/application/use-cases/register-admin.use-case';
 import { LoginUseCase } from './modules/users/application/use-cases/login.use-case';
 import { JwtAuthGuard } from './modules/users/presentation/guards/jwt-auth.guard';
-import { ServeStaticModule } from '@nestjs/serve-static';
-import { join } from 'path';
 import { SellerController } from './modules/sellers/presentation/controllers/seller.controller';
 import { SellerRepository } from './modules/sellers/domain/repositories/seller.repository';
 import { PrismaSellerRepository } from './modules/sellers/infrastructure/persistence/prisma-seller.repository';
 import { ListSellersUseCase } from './modules/sellers/application/use-cases/list-sellers.use-case';
 import { GetSellerByIdUseCase } from './modules/sellers/application/use-cases/get-seller-by-id.use-case';
+import { RemotionService } from './modules/videos/infrastructure/remotion/service.remotion';
 
 
 
 @Module({
-  imports: [
-    ServeStaticModule.forRoot({
-      rootPath: join(__dirname, '..', '..', 'remotion', 'videos'),
-      serveRoot: '/videos',
-    }),
-  ],
+  imports: [ ],
   controllers: [AppController, VideoController, TemplateController, SaleController, SellerController, AuthController],
   providers: [
     AppService,
     PrismaService,
     S3Service,
+    RemotionService,
     {
       provide: TemplateRepository,
       useFactory: (prisma: PrismaService) => new PrismaTemplateRepository(prisma),
