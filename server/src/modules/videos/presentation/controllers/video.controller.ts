@@ -1,5 +1,18 @@
-import { BadRequestException, Body, Controller, Post, UploadedFile, UseInterceptors } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Get,
+  InternalServerErrorException,
+  NotFoundException,
+  Param,
+  Post,
+  Res,
+  UploadedFile,
+  UseInterceptors,
+} from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import type { Response } from 'express';
 import {
   CreateCapcutVideoDto,
   CreateVideoDto,
@@ -118,11 +131,33 @@ export class VideoController {
 
   @Post('animations/render')
   async renderAnimation(@Body() dto: RenderAnimationVideoDto) {
-    return this.remotionService.requestRender({
-      compositionId: dto.compositionId,
-      templateId: dto.templateId,
-      inputProps: dto.inputProps,
-    });
+    try {
+      return await this.remotionService.requestRender({
+        compositionId: dto.compositionId,
+        templateId: dto.templateId,
+        inputProps: dto.inputProps,
+      });
+    } catch (error) {
+      const message = error instanceof Error
+        ? error.message
+        : 'No se pudo renderizar el video';
+
+      throw new InternalServerErrorException(message);
+    }
+  }
+
+  @Get('animations/render/download/:fileName')
+  async downloadRenderedAnimation(
+    @Param('fileName') fileName: string,
+    @Res() response: Response,
+  ) {
+    const filePath = await this.remotionService.getRenderFilePath(fileName);
+
+    if (!filePath) {
+      throw new NotFoundException('Video renderizado no encontrado');
+    }
+
+    return response.download(filePath, fileName);
   }
 
   private toResponse(video: Video) {

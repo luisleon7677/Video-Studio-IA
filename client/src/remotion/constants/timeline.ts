@@ -1,0 +1,10 @@
+export const FPS = 30;
+
+export const INTRO_SECONDS = 13;
+export const OUTRO_SECONDS = 10;
+export const TRANSITION_SECONDS = 1;
+
+export const INTRO_FRAMES = INTRO_SECONDS * FPS;
+export const OUTRO_FRAMES = OUTRO_SECONDS * FPS;
+export const TRANSITION_FRAMES = TRANSITION_SECONDS * FPS;
+export const TOTAL_FRAMES = INTRO_FRAMES + TRANSITION_FRAMES + OUTRO_FRAMES;

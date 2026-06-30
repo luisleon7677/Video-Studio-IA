@@ -1,73 +1,29 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Player } from '@remotion/player'
-import { ArrowLeft, CheckCircle2, Clapperboard, FileVideo, Loader2, Play, UploadCloud } from 'lucide-react'
+import {
+  ArrowLeft,
+  CheckCircle2,
+  Clapperboard,
+  FileVideo,
+  Loader2,
+  Play,
+  UploadCloud,
+} from 'lucide-react'
 import { renderAnimationVideo, uploadAnimationVideo } from '../api/api-remotion'
-import { CinematicZoomCelebration } from '../remotion/templates/Cinema'
-import { VentaAnimada } from '../remotion/templates/VentaAnimada'
-import { VentaSimple } from '../remotion/templates/VentaSimple'
-import { SaleScene } from '../remotion/templates/TemplateProps'
-
-const DEFAULT_VIDEO_URL =
-  'https://universityibc.s3.us-east-1.amazonaws.com/dashboard/video_studio/plantillas_remotion/venta4.mp4'
-const DEFAULT_SELLER_NAME = 'Luis'
+import { fetchSellerById, fetchSellers } from '../api/sellers'
+import { ModernSale } from '../remotion/templates/ModernSale'
+import { modernSaleMetadata } from '../remotion/templates/ModernSale/metadata'
+import { VentaExitosa } from '../remotion/templates/VentaExitosa'
+import { ventaExitosaMetadata } from '../remotion/templates/VentaExitosa/metadata'
 
 const templates = [
   {
-    id: 'sale-scene',
-    compositionId: 'sale-scene',
-    name: 'Escena Venta',
-    description: 'Venta personalizada con video de fondo y nombre del vendedor.',
-    component: SaleScene,
-    durationInFrames: 300,
-    width: 1080,
-    height: 1920,
-    defaultProps: {
-      videoUrl:
-        'https://universityibc.s3.us-east-1.amazonaws.com/dashboard/video_studio/plantillas_remotion/testventa.mp4',
-      nombre: 'Venta Props',
-    },
+    ...modernSaleMetadata,
+    component: ModernSale,
   },
   {
-    id: 'cinema',
-    compositionId: 'CinematicZoomCelebration',
-    name: 'Cinema',
-    description: 'Celebracion cinematica con zoom, confeti y tarjeta de venta.',
-    component: CinematicZoomCelebration,
-    durationInFrames: 390,
-    width: 1920,
-    height: 1080,
-    defaultProps: {
-      videoUrl: DEFAULT_VIDEO_URL,
-      nombre: 'Juan Perez',
-    },
-  },
-  {
-    id: 'venta-animada',
-    compositionId: 'VentaAnimada',
-    name: 'Venta animada',
-    description: 'Oferta directa con video base, texto principal y llamado a la accion.',
-    component: VentaAnimada,
-    durationInFrames: 390,
-    width: 1080,
-    height: 1920,
-    defaultProps: {
-      videoUrl: DEFAULT_VIDEO_URL,
-      nombre: DEFAULT_SELLER_NAME,
-    },
-  },
-  {
-    id: 'venta-simple',
-    compositionId: 'VentaSimple',
-    name: 'Venta simple',
-    description: 'Oferta vertical con lista de beneficios y llamado a la accion.',
-    component: VentaSimple,
-    durationInFrames: 390,
-    width: 1080,
-    height: 1920,
-    defaultProps: {
-      videoUrl: undefined,
-      nombre: DEFAULT_SELLER_NAME,
-    },
+    ...ventaExitosaMetadata,
+    component: VentaExitosa,
   },
 ]
 
@@ -79,11 +35,19 @@ const initialStatus = {
 export default function Animation() {
   const [selectedTemplateId, setSelectedTemplateId] = useState('')
   const [sellerName, setSellerName] = useState('')
-  const [selectedFileName, setSelectedFileName] = useState('')
-  const [uploadedVideoUrl, setUploadedVideoUrl] = useState('')
+  const [introFileName, setIntroFileName] = useState('')
+  const [introVideoUrl, setIntroVideoUrl] = useState('')
+  const [outroVideoUrl, setOutroVideoUrl] = useState('')
+  const [selectedSellerId, setSelectedSellerId] = useState('')
+  const [sellers, setSellers] = useState([])
+  const [sellerVideos, setSellerVideos] = useState([])
   const [uploadStatus, setUploadStatus] = useState(initialStatus)
+  const [sellerStatus, setSellerStatus] = useState(initialStatus)
   const [renderStatus, setRenderStatus] = useState(initialStatus)
+  const [renderDownloadUrl, setRenderDownloadUrl] = useState('')
   const [isUploading, setIsUploading] = useState(false)
+  const [isLoadingSellers, setIsLoadingSellers] = useState(false)
+  const [isLoadingSellerVideos, setIsLoadingSellerVideos] = useState(false)
   const [isRendering, setIsRendering] = useState(false)
 
   const selectedTemplate = useMemo(
@@ -91,39 +55,85 @@ export default function Animation() {
     [selectedTemplateId],
   )
 
-  const previewProps = useMemo(() => {
-    const defaults = selectedTemplate?.defaultProps ?? {
-      videoUrl: DEFAULT_VIDEO_URL,
-      nombre: DEFAULT_SELLER_NAME,
+  const selectedSeller = useMemo(
+    () => sellers.find((seller) => String(seller.id) === selectedSellerId),
+    [selectedSellerId, sellers],
+  )
+
+  const previewProps = useMemo(
+    () => ({
+      nombre: sellerName.trim() || undefined,
+      introVideoUrl: introVideoUrl || undefined,
+      outroVideoUrl: outroVideoUrl || undefined,
+    }),
+    [introVideoUrl, outroVideoUrl, sellerName],
+  )
+
+  const selectedOutroLabel = useMemo(() => {
+    const video = sellerVideos.find((item) => item.url === outroVideoUrl)
+    return video?.name || 'Video final por defecto'
+  }, [outroVideoUrl, sellerVideos])
+
+  useEffect(() => {
+    let isActive = true
+
+    async function loadSellers() {
+      setIsLoadingSellers(true)
+      setSellerStatus({ type: 'loading', message: 'Cargando vendedores...' })
+
+      try {
+        const result = await fetchSellers({ limit: 100 })
+        if (!isActive) return
+
+        setSellers(result.items ?? [])
+        setSellerStatus(initialStatus)
+      } catch (error) {
+        if (!isActive) return
+
+        setSellerStatus({
+          type: 'error',
+          message: error.message || 'No se pudo cargar la lista de vendedores.',
+        })
+      } finally {
+        if (isActive) {
+          setIsLoadingSellers(false)
+        }
+      }
     }
 
-    return {
-      videoUrl: uploadedVideoUrl || defaults.videoUrl,
-      nombre: sellerName.trim() || defaults.nombre,
+    loadSellers()
+
+    return () => {
+      isActive = false
     }
-  }, [selectedTemplate, sellerName, uploadedVideoUrl])
+  }, [])
 
   const openTemplate = useCallback((templateId) => {
     setSelectedTemplateId(templateId)
     setSellerName('')
-    setSelectedFileName('')
-    setUploadedVideoUrl('')
+    setIntroFileName('')
+    setIntroVideoUrl('')
+    setOutroVideoUrl('')
+    setSelectedSellerId('')
+    setSellerVideos([])
     setUploadStatus(initialStatus)
+    setSellerStatus(initialStatus)
     setRenderStatus(initialStatus)
+    setRenderDownloadUrl('')
   }, [])
 
   const closeTemplate = useCallback(() => {
     setSelectedTemplateId('')
   }, [])
 
-  const handleVideoChange = useCallback(
+  const handleIntroVideoChange = useCallback(
     async (event) => {
       const file = event.target.files?.[0]
       if (!file || !selectedTemplate) return
 
-      setSelectedFileName(file.name)
+      setIntroFileName(file.name)
       setIsUploading(true)
-      setUploadStatus({ type: 'loading', message: 'Subiendo video a S3...' })
+      setUploadStatus({ type: 'loading', message: 'Subiendo intro a S3...' })
 
       try {
         const result = await uploadAnimationVideo({
@@ -132,13 +142,13 @@ export default function Animation() {
           name: file.name,
         })
 
-        setUploadedVideoUrl(result.url)
-        setUploadStatus({ type: 'success', message: 'Video cargado y aplicado al preview.' })
+        setIntroVideoUrl(result.url)
+        setUploadStatus({ type: 'success', message: 'Intro cargada y aplicada al preview.' })
       } catch (error) {
-        setUploadedVideoUrl('')
+        setIntroVideoUrl('')
         setUploadStatus({
           type: 'error',
-          message: error.message || 'No se pudo subir el video.',
+          message: error.message || 'No se pudo subir el video principal.',
         })
       } finally {
         setIsUploading(false)
@@ -147,23 +157,68 @@ export default function Animation() {
     [selectedTemplate],
   )
 
+  const handleSellerChange = useCallback(async (event) => {
+    const sellerId = event.target.value
+
+    setSelectedSellerId(sellerId)
+    setOutroVideoUrl('')
+    setSellerVideos([])
+    setSellerStatus(initialStatus)
+
+    if (!sellerId) return
+
+    setIsLoadingSellerVideos(true)
+    setSellerStatus({ type: 'loading', message: 'Cargando videos del vendedor...' })
+
+    try {
+      const seller = await fetchSellerById(sellerId)
+      const videos = seller.videos ?? []
+
+      setSellerName((currentName) => currentName || seller.name || '')
+      setSellerVideos(videos)
+      setSellerStatus(
+        videos.length
+          ? initialStatus
+          : { type: 'empty', message: 'Este vendedor no tiene videos disponibles.' },
+      )
+    } catch (error) {
+      setSellerStatus({
+        type: 'error',
+        message: error.message || 'No se pudieron cargar los videos del vendedor.',
+      })
+    } finally {
+      setIsLoadingSellerVideos(false)
+    }
+  }, [])
+
   const handleRender = useCallback(async () => {
     if (!selectedTemplate) return
 
     setIsRendering(true)
+    setRenderDownloadUrl('')
     setRenderStatus({ type: 'loading', message: 'Preparando render...' })
 
     try {
       const result = await renderAnimationVideo({
-        compositionId: selectedTemplate.compositionId,
+        compositionId: selectedTemplate.id,
         templateId: selectedTemplate.id,
         inputProps: previewProps,
       })
 
+      setRenderDownloadUrl(result.downloadUrl || '')
       setRenderStatus({
         type: 'success',
-        message: result.message || 'Solicitud de render enviada.',
+        message: result.message || 'Video renderizado. Ya puedes descargar el MP4.',
       })
+
+      if (result.downloadUrl) {
+        const link = document.createElement('a')
+        link.href = result.downloadUrl
+        link.download = result.fileName || 'video-renderizado.mp4'
+        document.body.appendChild(link)
+        link.click()
+        link.remove()
+      }
     } catch (error) {
       setRenderStatus({
         type: 'error',
@@ -195,7 +250,7 @@ export default function Animation() {
           </div>
         </header>
 
-        <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_380px]">
+        <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_400px]">
           <div className="min-w-0 overflow-hidden rounded-lg border border-border-subtle bg-card shadow-sm">
             <div className="border-b border-border-soft px-4 py-3">
               <p className="studio-label">Preview</p>
@@ -208,16 +263,17 @@ export default function Animation() {
                 style={{
                   aspectRatio,
                   maxHeight: 'calc(100vh - 260px)',
-                  maxWidth: selectedTemplate.width > selectedTemplate.height ? '100%' : '440px',
+                  width: '100%',
+                  maxWidth: '960px',
                 }}
               >
                 <Player
-                  key={`${selectedTemplate.id}-${previewProps.videoUrl}-${previewProps.nombre}`}
+                  key={selectedTemplate.id}
                   component={selectedTemplate.component}
                   durationInFrames={selectedTemplate.durationInFrames}
                   compositionWidth={selectedTemplate.width}
                   compositionHeight={selectedTemplate.height}
-                  fps={30}
+                  fps={selectedTemplate.fps}
                   controls
                   style={{
                     width: '100%',
@@ -240,30 +296,30 @@ export default function Animation() {
                 id="seller-name"
                 value={sellerName}
                 onChange={(event) => setSellerName(event.target.value)}
-                placeholder={selectedTemplate.defaultProps.nombre}
+                placeholder="Mi Producto"
                 className="studio-focus-ring mt-2 h-11 w-full rounded-md border border-border-soft bg-input px-3 text-sm text-foreground placeholder:text-muted-foreground"
               />
 
-              <label className="mt-4 block text-sm font-semibold" htmlFor="template-video">
-                Video para la plantilla
+              <label className="mt-4 block text-sm font-semibold" htmlFor="intro-video">
+                Video principal
               </label>
               <label
-                htmlFor="template-video"
-                className="studio-focus-ring mt-2 flex min-h-28 cursor-pointer flex-col items-center justify-center rounded-md border border-dashed border-border-subtle bg-input px-4 py-5 text-center transition hover:bg-accent"
+                htmlFor="intro-video"
+                className="studio-focus-ring mt-2 flex min-h-24 cursor-pointer flex-col items-center justify-center rounded-md border border-dashed border-border-subtle bg-input px-4 py-4 text-center transition hover:bg-accent"
               >
                 {isUploading ? <Loader2 className="animate-spin" size={24} /> : <UploadCloud size={24} />}
                 <span className="mt-2 text-sm font-semibold">
-                  {selectedFileName || 'Cargar video'}
+                  {introFileName || 'Cargar intro'}
                 </span>
                 <span className="mt-1 text-xs text-muted-foreground">
-                  Al seleccionar un archivo se sube a S3 y cambia el preview.
+                  Si no cargas uno, se usa el intro por defecto de public.
                 </span>
               </label>
               <input
-                id="template-video"
+                id="intro-video"
                 type="file"
                 accept="video/*"
-                onChange={handleVideoChange}
+                onChange={handleIntroVideoChange}
                 className="sr-only"
               />
 
@@ -279,14 +335,73 @@ export default function Animation() {
             </section>
 
             <section className="rounded-lg border border-border-subtle bg-card p-4 shadow-sm">
+              <p className="studio-label">Outro</p>
+
+              <label className="mt-4 block text-sm font-semibold" htmlFor="seller-select">
+                Vendedor
+              </label>
+              <select
+                id="seller-select"
+                value={selectedSellerId}
+                onChange={handleSellerChange}
+                disabled={isLoadingSellers}
+                className="studio-focus-ring mt-2 h-11 w-full rounded-md border border-border-soft bg-input px-3 text-sm text-foreground disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <option value="">
+                  {isLoadingSellers ? 'Cargando vendedores...' : 'Seleccionar vendedor'}
+                </option>
+                {sellers.map((seller) => (
+                  <option key={seller.id} value={seller.id}>
+                    {seller.name}
+                  </option>
+                ))}
+              </select>
+
+              <label className="mt-4 block text-sm font-semibold" htmlFor="outro-video">
+                Video final de 10 segundos
+              </label>
+              <select
+                id="outro-video"
+                value={outroVideoUrl}
+                onChange={(event) => setOutroVideoUrl(event.target.value)}
+                disabled={!selectedSellerId || isLoadingSellerVideos || sellerVideos.length === 0}
+                className="studio-focus-ring mt-2 h-11 w-full rounded-md border border-border-soft bg-input px-3 text-sm text-foreground disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <option value="">
+                  {isLoadingSellerVideos ? 'Cargando videos...' : 'Usar outro por defecto'}
+                </option>
+                {sellerVideos.map((video) => (
+                  <option key={video.id ?? video.url} value={video.url}>
+                    {video.name}
+                  </option>
+                ))}
+              </select>
+
+              {sellerStatus.message ? (
+                <p
+                  className={`mt-3 text-sm ${
+                    sellerStatus.type === 'error' ? 'text-destructive' : 'text-muted-foreground'
+                  }`}
+                >
+                  {sellerStatus.message}
+                </p>
+              ) : null}
+            </section>
+
+            <section className="rounded-lg border border-border-subtle bg-card p-4 shadow-sm">
               <p className="studio-label">Salida</p>
               <div className="mt-4 rounded-md border border-border-soft bg-input p-3">
                 <div className="flex items-start gap-3">
                   <FileVideo className="mt-0.5 text-muted-foreground" size={18} />
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold">{previewProps.nombre}</p>
-                    <p className="mt-1 break-all text-xs text-muted-foreground">
-                      {previewProps.videoUrl || 'Video base de la plantilla'}
+                    <p className="truncate text-sm font-semibold">
+                      {sellerName.trim() || selectedSeller?.name || 'Mi Producto'}
+                    </p>
+                    <p className="mt-1 truncate text-xs text-muted-foreground">
+                      Intro: {introFileName || 'default-intro.mp4'}
+                    </p>
+                    <p className="mt-1 truncate text-xs text-muted-foreground">
+                      Outro: {selectedOutroLabel}
                     </p>
                   </div>
                 </div>
@@ -295,7 +410,7 @@ export default function Animation() {
               <button
                 type="button"
                 onClick={handleRender}
-                disabled={isRendering || isUploading}
+                disabled={isRendering || isUploading || isLoadingSellerVideos}
                 className="studio-focus-ring mt-4 inline-flex h-11 w-full items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {isRendering ? <Loader2 className="animate-spin" size={18} /> : <Play size={18} />}
@@ -314,6 +429,16 @@ export default function Animation() {
                   <span>{renderStatus.message}</span>
                 </div>
               ) : null}
+
+              {renderDownloadUrl ? (
+                <a
+                  href={renderDownloadUrl}
+                  download
+                  className="studio-focus-ring mt-3 inline-flex h-10 w-full items-center justify-center rounded-md border border-border-subtle bg-card px-3 text-sm font-bold text-foreground transition hover:bg-accent"
+                >
+                  Descargar MP4
+                </a>
+              ) : null}
             </section>
           </aside>
         </section>
@@ -330,61 +455,58 @@ export default function Animation() {
         </div>
 
         <span className="rounded-full border border-border-subtle bg-card px-3 py-2 text-sm font-bold text-muted-foreground">
-          {templates.length} plantillas
+          {templates.length} plantilla estandar
         </span>
       </header>
 
       <section className="grid items-start gap-5 sm:grid-cols-2 xl:grid-cols-4">
-        {templates.map((template) => {
-          const previewRatio = `${template.width} / ${template.height}`
-
-          return (
-            <article
-              key={template.id}
-              className="overflow-hidden rounded-lg border border-border-subtle bg-card shadow-sm"
-            >
-              <div className="bg-viewport p-3">
-                <div
-                  className="mx-auto overflow-hidden rounded-md bg-black"
+        {templates.map((template) => (
+          <article
+            key={template.id}
+            className="overflow-hidden rounded-lg border border-border-subtle bg-card shadow-sm"
+          >
+            <div className="bg-viewport p-3">
+              <div
+                className="mx-auto overflow-hidden rounded-md bg-black"
+                style={{
+                  aspectRatio: `${template.width} / ${template.height}`,
+                  width: '100%',
+                  maxHeight: '260px',
+                }}
+              >
+                <Player
+                  component={template.component}
+                  durationInFrames={template.durationInFrames}
+                  compositionWidth={template.width}
+                  compositionHeight={template.height}
+                  fps={template.fps}
+                  controls
                   style={{
-                    aspectRatio: previewRatio,
-                    maxHeight: template.width > template.height ? '210px' : '300px',
+                    width: '100%',
+                    height: '100%',
                   }}
-                >
-                  <Player
-                    component={template.component}
-                    durationInFrames={template.durationInFrames}
-                    compositionWidth={template.width}
-                    compositionHeight={template.height}
-                    fps={30}
-                    controls
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                    }}
-                    inputProps={template.defaultProps}
-                  />
-                </div>
+                  inputProps={{}}
+                />
               </div>
+            </div>
 
-              <div className="p-4">
-                <h2 className="text-lg font-extrabold tracking-normal">{template.name}</h2>
-                <p className="mt-2 min-h-16 text-sm leading-6 text-muted-foreground">
-                  {template.description}
-                </p>
+            <div className="p-4">
+              <h2 className="text-lg font-extrabold tracking-normal">{template.name}</h2>
+              <p className="mt-2 min-h-16 text-sm leading-6 text-muted-foreground">
+                {template.description}
+              </p>
 
-                <button
-                  type="button"
-                  onClick={() => openTemplate(template.id)}
-                  className="studio-focus-ring mt-4 inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-primary px-3 text-sm font-bold text-primary-foreground transition hover:opacity-90"
-                >
-                  <Clapperboard size={17} />
-                  Usar plantilla
-                </button>
-              </div>
-            </article>
-          )
-        })}
+              <button
+                type="button"
+                onClick={() => openTemplate(template.id)}
+                className="studio-focus-ring mt-4 inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-primary px-3 text-sm font-bold text-primary-foreground transition hover:opacity-90"
+              >
+                <Clapperboard size={17} />
+                Usar plantilla
+              </button>
+            </div>
+          </article>
+        ))}
       </section>
     </main>
   )

@@ -2,6 +2,11 @@ import { withAuthHeaders } from './http'
 
 const API_BASE = import.meta.env.VITE_API_URL ?? '/api'
 
+function resolveApiUrl(path) {
+  if (!path?.startsWith('/')) return path
+  return `${API_BASE}${path}`
+}
+
 export async function uploadAnimationVideo({ file, templateId, name }) {
   const formData = new FormData()
   formData.append('file', file)
@@ -21,7 +26,7 @@ export async function uploadAnimationVideo({ file, templateId, name }) {
   })
 
   if (!response.ok) {
-    const errorText = await response.text().catch(() => '')
+    const errorText = await readErrorMessage(response)
     throw new Error(errorText || 'No se pudo subir el video de la plantilla')
   }
 
@@ -42,9 +47,27 @@ export async function renderAnimationVideo({ compositionId, templateId, inputPro
   })
 
   if (!response.ok) {
-    const errorText = await response.text().catch(() => '')
+    const errorText = await readErrorMessage(response)
     throw new Error(errorText || 'No se pudo solicitar el render del video')
   }
 
-  return response.json()
+  const result = await response.json()
+
+  return {
+    ...result,
+    downloadUrl: resolveApiUrl(result.downloadUrl),
+  }
+}
+
+async function readErrorMessage(response) {
+  const errorText = await response.text().catch(() => '')
+
+  if (!errorText) return ''
+
+  try {
+    const errorJson = JSON.parse(errorText)
+    return errorJson.message || errorText
+  } catch {
+    return errorText
+  }
 }
