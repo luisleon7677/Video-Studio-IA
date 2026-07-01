@@ -9,6 +9,6 @@ export abstract class TemplateRepository {
   abstract findById(id: number): Promise<Template | null>;
   abstract create(template: Template): Promise<Template>;
   abstract update(template: Template): Promise<Template>;
-  abstract countVideosByTemplateId(id: number): Promise<number>;
+  abstract countVideosBySoundId(id: number): Promise<number>;
   abstract deleteById(id: number): Promise<boolean>;
 }

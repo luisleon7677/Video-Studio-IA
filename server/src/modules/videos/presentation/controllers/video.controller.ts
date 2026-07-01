@@ -4,15 +4,12 @@ import {
   Controller,
   Get,
   InternalServerErrorException,
-  NotFoundException,
-  Param,
   Post,
-  Res,
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import type { Response } from 'express';
+import { promises as fs } from 'fs';
 import {
   CreateCapcutVideoDto,
   CreateVideoDto,
@@ -21,6 +18,7 @@ import {
   UploadCapcutVideoDto,
 } from '../dto/create-video.dto';
 import { CreateVideoUseCase } from '../../application/use-cases/create-video.use-case';
+import { ListRemotionVideosUseCase } from '../../application/use-cases/list-remotion-videos.use-case';
 import { S3Service } from '../../infrastructure/storage/s3.service';
 import { Video } from '../../domain/entities/video.entity';
 import { RemotionService } from '../../infrastructure/remotion/service.remotion';
@@ -35,6 +33,7 @@ interface UploadedVideoFile {
 export class VideoController {
   constructor(
     private readonly createVideoUseCase: CreateVideoUseCase,
+    private readonly listRemotionVideosUseCase: ListRemotionVideosUseCase,
     private readonly s3Service: S3Service,
     private readonly remotionService: RemotionService,
   ) {}
@@ -45,10 +44,11 @@ export class VideoController {
       name: dto.name,
       url: dto.url,
       idAdmin: dto.idAdmin,
-      idTemplate: dto.idTemplate,
+      idSound: dto.idSound,
       type: dto.type,
       status: dto.status,
       idSeller: dto.idSeller,
+      config: dto.config,
     });
 
     return this.toResponse(video);
@@ -119,7 +119,6 @@ export class VideoController {
       buffer: file.buffer,
       originalName: file.originalname,
       contentType: file.mimetype,
-      templateId: dto.templateId,
     });
 
     return {
@@ -131,33 +130,63 @@ export class VideoController {
 
   @Post('animations/render')
   async renderAnimation(@Body() dto: RenderAnimationVideoDto) {
+    let renderFilePath: string | null = null;
+
     try {
-      return await this.remotionService.requestRender({
+      const render = await this.remotionService.requestRender({
         compositionId: dto.compositionId,
         templateId: dto.templateId,
         inputProps: dto.inputProps,
       });
+      renderFilePath = render.filePath;
+
+      const outputName = this.ensureMp4Extension(dto.outputName);
+      const buffer = await fs.readFile(render.filePath);
+      const url = await this.s3Service.uploadAnimationVideo({
+        buffer,
+        originalName: outputName,
+        contentType: 'video/mp4',
+      });
+
+      const video = await this.createVideoUseCase.execute({
+        name: outputName.replace(/\.[^.]+$/, ''),
+        url,
+        idAdmin: dto.idAdmin,
+        idSound: dto.idSound,
+        status: dto.status ?? 1,
+        type: 1,
+        config: dto.audioConfig ?? null,
+      });
+
+      return {
+        ...this.toResponse(video),
+        jobId: render.jobId,
+        compositionId: render.compositionId,
+        templateId: render.templateId,
+        inputProps: render.inputProps,
+        fileName: outputName,
+        downloadUrl: url,
+        message: 'Video renderizado y subido a S3. Ya esta disponible en el historial.',
+      };
     } catch (error) {
       const message = error instanceof Error
         ? error.message
         : 'No se pudo renderizar el video';
 
       throw new InternalServerErrorException(message);
+    } finally {
+      if (renderFilePath) {
+        await this.remotionService.cleanupRenderFile(renderFilePath);
+      }
     }
   }
 
-  @Get('animations/render/download/:fileName')
-  async downloadRenderedAnimation(
-    @Param('fileName') fileName: string,
-    @Res() response: Response,
-  ) {
-    const filePath = await this.remotionService.getRenderFilePath(fileName);
-
-    if (!filePath) {
-      throw new NotFoundException('Video renderizado no encontrado');
-    }
-
-    return response.download(filePath, fileName);
+  @Get('animations/history')
+  async listAnimationHistory() {
+    const videos = await this.listRemotionVideosUseCase.execute();
+    return {
+      items: videos.map((video) => this.toResponse(video)),
+    };
   }
 
   private toResponse(video: Video) {
@@ -166,10 +195,20 @@ export class VideoController {
       name: video.name,
       url: video.url,
       idAdmin: video.idAdmin,
-      idTemplate: video.idTemplate,
+      idSound: video.idSound,
       type: video.type,
       status: video.status,
       idSeller: video.idSeller,
+      config: video.config,
     };
+  }
+
+  private ensureMp4Extension(fileName: string): string {
+    const trimmed = fileName.trim();
+    if (!trimmed) {
+      throw new BadRequestException('El nombre del video es obligatorio');
+    }
+
+    return trimmed.toLowerCase().endsWith('.mp4') ? trimmed : `${trimmed}.mp4`;
   }
 }

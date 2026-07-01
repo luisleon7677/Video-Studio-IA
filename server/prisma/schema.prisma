@@ -8,13 +8,13 @@ datasource db {
 }
 
 model User {
-  id        Int         @id @default(autoincrement())
-  name      String?     @db.VarChar(120)
-  email     String?     @db.VarChar(120)
-  code      String?     @db.VarChar(100)
-  password  String?     @db.VarChar(120)
-  templates templates[]
-  videos    Video[]
+  id       Int      @id @default(autoincrement())
+  name     String?  @db.VarChar(120)
+  email    String?  @db.VarChar(120)
+  code     String?  @db.VarChar(100)
+  password String?  @db.VarChar(120)
+  sounds   sounds[]
+  videos   Video[]
 
   @@map("users")
 }
@@ -24,21 +24,22 @@ model Video {
   name         String        @db.VarChar(250)
   url          String        @db.VarChar(250)
   id_admin     Int?
-  id_template  Int?
   type         Int?
   status       Int?
   id_seller    Int?
+  id_sound     Int?
+  config       Json?
   sellers      sellers?      @relation(fields: [id_seller], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "videos_sellers_FK")
+  sounds       sounds?       @relation(fields: [id_sound], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "videos_sounds_FK")
   states_video states_video? @relation(fields: [status], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "videos_states_video_FK")
-  templates    templates?    @relation(fields: [id_template], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "videos_templates_FK")
   types_videos types_videos? @relation(fields: [type], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "videos_types_videos_FK")
   users        User?         @relation(fields: [id_admin], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "videos_users_FK")
 
   @@index([status], map: "videos_states_video_FK")
-  @@index([id_template], map: "videos_templates_FK")
   @@index([type], map: "videos_types_videos_FK")
   @@index([id_admin], map: "videos_users_FK")
   @@index([id_seller], map: "videos_sellers_FK")
+  @@index([id_sound], map: "videos_sounds_FK")
   @@map("videos")
 }
 
@@ -58,19 +59,6 @@ model states_video {
   videos      Video[]
 }
 
-model templates {
-  id        Int       @id @default(autoincrement())
-  name      String?   @db.VarChar(120)
-  content   String?   @db.Text
-  create_at DateTime? @default(now()) @db.Timestamp(0)
-  update_at DateTime? @default(now()) @db.Timestamp(0)
-  id_admin  Int?
-  users     User?     @relation(fields: [id_admin], references: [id], onDelete: Cascade, map: "templates_users_FK")
-  videos    Video[]
-
-  @@index([id_admin], map: "templates_users_FK")
-}
-
 model types_videos {
   id          Int     @id @default(autoincrement())
   name        String? @db.VarChar(150)
@@ -85,4 +73,17 @@ model sellers {
   code     String? @db.VarChar(100)
   id_admin Int?
   videos   Video[]
+}
+
+model sounds {
+  id        Int       @id @default(autoincrement())
+  name      String?   @db.VarChar(120)
+  create_at DateTime? @default(now()) @db.Timestamp(0)
+  update_at DateTime? @default(now()) @db.Timestamp(0)
+  id_admin  Int?
+  url       String?   @db.VarChar(120)
+  users     User?     @relation(fields: [id_admin], references: [id], onDelete: Cascade, map: "templates_users_FK")
+  videos    Video[]
+
+  @@index([id_admin], map: "templates_users_FK")
 }

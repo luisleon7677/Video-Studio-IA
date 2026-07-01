@@ -15,7 +15,7 @@ export const AnimationPage = lazy(()=> import('../pages/Animations'))
 export const routePreloaders = {
   '/': () => import('../pages/Dashboard'),
   '/edicion-video': () => import('../pages/VideoEditing'),
-  '/plantillas': () => import('../pages/Templates'),
+  '/audios': () => import('../pages/Templates'),
   '/procesamiento-ia': () => import('../pages/AiProcessing'),
   '/historial-videos': () => import('../pages/VideoHistory'),
   '/historial-ventas': () => import('../pages/SalesHistory'),

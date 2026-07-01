@@ -3,7 +3,7 @@ import { TemplateRepository } from '../../domain/repositories/template.repositor
 
 export interface CreateTemplateInput {
   name: string;
-  content: string;
+  url: string;
   id_admin: number;
 }
 
@@ -14,7 +14,7 @@ export class CreateTemplateUseCase {
     const template = new Template(
       null,
       input.name,
-      input.content,
+      input.url,
       input.id_admin,
     );
     return this.templateRepository.create(template);

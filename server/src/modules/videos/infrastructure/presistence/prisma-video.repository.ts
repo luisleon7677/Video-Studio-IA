@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 import { Video } from '../../domain/entities/video.entity';
 import { VideoRepository } from '../../domain/repositories/video.repository';
 
@@ -11,10 +11,11 @@ export class PrismaVideoRepository implements VideoRepository {
         name: video.name,
         url: video.url,
         id_admin: video.idAdmin,
-        id_template: video.idTemplate,
+        id_sound: video.idSound,
         type: video.type,
         status: video.status,
         id_seller: video.idSeller,
+        config: video.config ? (video.config as Prisma.InputJsonValue) : undefined,
       },
     });
 
@@ -27,6 +28,15 @@ export class PrismaVideoRepository implements VideoRepository {
         id_seller: sellerId,
         type: 2,
       },
+      orderBy: { id: 'desc' },
+    });
+
+    return rows.map((row) => Video.fromPersistence(row));
+  }
+
+  async findByType(type: number): Promise<Video[]> {
+    const rows = await this.prisma.video.findMany({
+      where: { type },
       orderBy: { id: 'desc' },
     });
 

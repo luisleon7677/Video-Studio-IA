@@ -50,13 +50,14 @@ export default function App() {
                 }
               />
               <Route
-                path="plantillas"
+                path="audios"
                 element={
                   <Suspense fallback={<PageLoader />}>
                     <TemplatesPage />
                   </Suspense>
                 }
               />
+              <Route path="plantillas" element={<Navigate to="/audios" replace />} />
 
               <Route
               path='animations'

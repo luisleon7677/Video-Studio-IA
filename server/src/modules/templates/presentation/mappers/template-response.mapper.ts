@@ -4,7 +4,7 @@ export function toTemplateResponse(template: Template) {
   return {
     id: template.id,
     name: template.name,
-    content: template.content,
+    url: template.url,
     idAdmin: template.id_admin,
     createdAt: template.createdAt?.toISOString() ?? null,
     updatedAt: template.updatedAt?.toISOString() ?? null,

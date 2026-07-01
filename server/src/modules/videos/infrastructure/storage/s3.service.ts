@@ -11,7 +11,12 @@ export interface UploadAnimationVideoFileInput {
   buffer: Buffer;
   originalName: string;
   contentType?: string;
-  templateId?: string;
+}
+
+export interface UploadSoundFileInput {
+  buffer: Buffer;
+  originalName: string;
+  contentType?: string;
 }
 
 export class S3Service {
@@ -20,19 +25,23 @@ export class S3Service {
   private readonly region: string;
   private readonly capcutPath: string;
   private readonly animationPath: string;
+  private readonly soundsPath: string;
 
   constructor() {
     this.region = process.env.AWS_REGION ?? 'us-east-1';
     this.bucket =
       process.env.AWS_CAPCUT_VIDEOS_BUCKET_NAME ??
       process.env.AWS_BUCKET_NAME ??
-      '';
+      'universityibc';
     this.capcutPath =
       process.env.AWS_CAPCUT_VIDEOS_BUCKET_PATH ??
-      this.joinPath(process.env.AWS_S3_BUCKET_PATH ?? '', 'capcut_videos');
+      this.joinPath('dashboard/video_studio', 'capcut_videos');
     this.animationPath =
       process.env.AWS_ANIMATION_VIDEOS_BUCKET_PATH ??
-      this.joinPath(process.env.AWS_S3_BUCKET_PATH ?? '', 'animation_videos');
+      this.joinPath('dashboard/video_studio', 'videos_finales');
+    this.soundsPath =
+      process.env.AWS_SOUNDS_BUCKET_PATH ??
+      this.joinPath('dashboard/video_studio', 'sounds');
 
     this.client = new S3Client({
       region: this.region,
@@ -72,10 +81,7 @@ export class S3Service {
       throw new Error('AWS bucket no configurado');
     }
 
-    const key = this.buildAnimationVideoKey(
-      input.templateId,
-      input.originalName,
-    );
+    const key = this.buildAnimationVideoKey(input.originalName);
 
     await this.client.send(
       new PutObjectCommand({
@@ -89,26 +95,49 @@ export class S3Service {
     return `https://${this.bucket}.s3.${this.region}.amazonaws.com/${key}`;
   }
 
+  async uploadSound(input: UploadSoundFileInput): Promise<string> {
+    if (!this.bucket) {
+      throw new Error('AWS bucket no configurado');
+    }
+
+    const key = this.buildSoundKey(input.originalName);
+
+    await this.client.send(
+      new PutObjectCommand({
+        Bucket: this.bucket,
+        Key: key,
+        Body: input.buffer,
+        ContentType: input.contentType ?? 'audio/mpeg',
+      }),
+    );
+
+    return `https://${this.bucket}.s3.${this.region}.amazonaws.com/${key}`;
+  }
+
   private buildCapcutVideoKey(sellerId: number, originalName: string): string {
     const extension = this.getExtension(originalName);
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const safeName = this.sanitizeFileName(originalName.replace(/\.[^.]+$/, ''));
-    const filename = `${timestamp}-${safeName || 'video'}${extension}`;
+    const filename = `${timestamp}-seller-${sellerId}-${safeName || 'video'}${extension}`;
 
-    return this.joinPath(this.capcutPath, `seller-${sellerId}`, filename);
+    return this.joinPath(this.capcutPath, filename);
   }
 
-  private buildAnimationVideoKey(
-    templateId: string | undefined,
-    originalName: string,
-  ): string {
+  private buildAnimationVideoKey(originalName: string): string {
     const extension = this.getExtension(originalName);
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const safeName = this.sanitizeFileName(originalName.replace(/\.[^.]+$/, ''));
-    const safeTemplate = this.sanitizeFileName(templateId ?? 'template');
     const filename = `${timestamp}-${safeName || 'video'}${extension}`;
 
-    return this.joinPath(this.animationPath, safeTemplate, filename);
+    return this.joinPath(this.animationPath, filename);
+  }
+
+  private buildSoundKey(originalName: string): string {
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const safeName = this.sanitizeFileName(originalName.replace(/\.[^.]+$/, ''));
+    const filename = `${timestamp}-${safeName || 'audio'}.mp3`;
+
+    return this.joinPath(this.soundsPath, filename);
   }
 
   private getExtension(fileName: string): string {

@@ -6,7 +6,7 @@ import { NameCelebration } from "./NameCelebration";
 
 type SceneProps = Pick<TemplateProps, "introVideoUrl" | "nombre">;
 
-export const Scene = ({ introVideoUrl, nombre = "Mi Producto" }: SceneProps) => {
+export const Scene = ({ introVideoUrl, nombre = "Vendedor" }: SceneProps) => {
   const frame = useCurrentFrame();
 
   const zoom = interpolate(frame, [0, 150], [1.18, 1.04], {

@@ -1,6 +1,7 @@
 import { randomUUID } from 'crypto';
 import { accessSync, constants, promises as fs } from 'fs';
-import { basename, resolve } from 'path';
+import { dirname, join, resolve } from 'path';
+import { tmpdir } from 'os';
 import { promisify } from 'util';
 import { execFile } from 'child_process';
 
@@ -14,14 +15,12 @@ export interface RequestRemotionRenderInput {
 
 export class RemotionService {
   private readonly clientDir = this.resolveClientDir();
-  private readonly renderDir = this.resolveRenderDir();
 
   async requestRender(input: RequestRemotionRenderInput) {
     const jobId = `render-${Date.now()}-${randomUUID().slice(0, 8)}`;
     const fileName = `${jobId}.mp4`;
-    const outputPath = resolve(this.renderDir, fileName);
-
-    await fs.mkdir(this.renderDir, { recursive: true });
+    const renderDir = await fs.mkdtemp(join(tmpdir(), 'video-studio-remotion-'));
+    const outputPath = resolve(renderDir, fileName);
 
     const remotionCli = resolve(
       this.clientDir,
@@ -61,25 +60,16 @@ export class RemotionService {
       templateId: input.templateId,
       inputProps: input.inputProps ?? {},
       fileName,
-      downloadUrl: `/videos/animations/render/download/${fileName}`,
-      message: 'Video renderizado. Ya puedes descargar el MP4.',
+      filePath: outputPath,
+      message: 'Video renderizado correctamente.',
     };
   }
 
-  async getRenderFilePath(fileName: string): Promise<string | null> {
-    const safeFileName = basename(fileName);
-
-    if (safeFileName !== fileName || !safeFileName.endsWith('.mp4')) {
-      return null;
-    }
-
-    const filePath = resolve(this.renderDir, safeFileName);
-
+  async cleanupRenderFile(filePath: string): Promise<void> {
     try {
-      await fs.access(filePath, constants.R_OK);
-      return filePath;
+      await fs.rm(dirname(filePath), { recursive: true, force: true });
     } catch {
-      return null;
+      // El render ya no es necesario despues del upload a S3.
     }
   }
 
@@ -99,12 +89,6 @@ export class RemotionService {
     }
 
     return candidates[0];
-  }
-
-  private resolveRenderDir(): string {
-    const cwd = process.cwd();
-    const serverDir = cwd.endsWith('server') ? cwd : resolve(cwd, 'server');
-    return resolve(serverDir, 'renders', 'animations');
   }
 
   private async assertReadable(path: string, message: string): Promise<void> {

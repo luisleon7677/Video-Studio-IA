@@ -1,13 +1,13 @@
-import { LayoutDashboard, Film, LayoutTemplate, Receipt, Sparkles, History, UsersRound } from 'lucide-react'
+import { LayoutDashboard, Film, Music2, Receipt, Sparkles, History, UsersRound } from 'lucide-react'
 
 export const navItems = [
-  {
-    id: 'dashboard',
-    label: 'Dashboard',
-    path: '/',
-    icon: LayoutDashboard,
-    description: 'Resumen general del sistema',
-  },
+  // {
+  //   id: 'dashboard',
+  //   label: 'Dashboard',
+  //   path: '/',
+  //   icon: LayoutDashboard,
+  //   description: 'Resumen general del sistema',
+  // },
   {
     id: 'animations',
     label: 'Animaciones Remotion',
@@ -16,19 +16,19 @@ export const navItems = [
     description: 'Plantillas de remotion',
   },
   {
-    id: 'templates',
-    label: 'Plantillas',
-    path: '/plantillas',
-    icon: LayoutTemplate,
-    description: 'Prompts reutilizables para guiones y montaje',
+    id: 'sounds',
+    label: 'Audios',
+    path: '/audios',
+    icon: Music2,
+    description: 'Efectos de sonido para videos',
   },
-  {
-    id: 'ai-processing',
-    label: 'Procesamiento con IA',
-    path: '/procesamiento-ia',
-    icon: Sparkles,
-    description: 'Video + plantilla → montaje automático',
-  },
+  // {
+  //   id: 'ai-processing',
+  //   label: 'Procesamiento con IA',
+  //   path: '/procesamiento-ia',
+  //   icon: Sparkles,
+  //   description: 'Video + plantilla → montaje automático',
+  // },
   {
     id: 'video-history',
     label: 'Historial de videos',

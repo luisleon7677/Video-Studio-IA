@@ -5,7 +5,7 @@ type NameCelebrationProps = {
   nombre?: string;
 };
 
-export const NameCelebration = ({ nombre = "Mi Producto" }: NameCelebrationProps) => {
+export const NameCelebration = ({ nombre = "Vendedor" }: NameCelebrationProps) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 

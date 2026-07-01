@@ -11,6 +11,8 @@ import {
 } from 'lucide-react'
 import { renderAnimationVideo, uploadAnimationVideo } from '../api/api-remotion'
 import { fetchSellerById, fetchSellers } from '../api/sellers'
+import AudioClipSelector from '../components/audio/AudioClipSelector'
+import { useAuth } from '../hooks/useAuth'
 import { ModernSale } from '../remotion/templates/ModernSale'
 import { modernSaleMetadata } from '../remotion/templates/ModernSale/metadata'
 import { VentaExitosa } from '../remotion/templates/VentaExitosa'
@@ -33,11 +35,14 @@ const initialStatus = {
 }
 
 export default function Animation() {
+  const { user } = useAuth()
   const [selectedTemplateId, setSelectedTemplateId] = useState('')
   const [sellerName, setSellerName] = useState('')
+  const [outputName, setOutputName] = useState('')
   const [introFileName, setIntroFileName] = useState('')
   const [introVideoUrl, setIntroVideoUrl] = useState('')
   const [outroVideoUrl, setOutroVideoUrl] = useState('')
+  const [audioClip, setAudioClip] = useState(null)
   const [selectedSellerId, setSelectedSellerId] = useState('')
   const [sellers, setSellers] = useState([])
   const [sellerVideos, setSellerVideos] = useState([])
@@ -65,8 +70,11 @@ export default function Animation() {
       nombre: sellerName.trim() || undefined,
       introVideoUrl: introVideoUrl || undefined,
       outroVideoUrl: outroVideoUrl || undefined,
+      music: audioClip?.url || undefined,
+      musicStart: audioClip?.startTime ?? undefined,
+      musicDuration: audioClip?.duration ?? undefined,
     }),
-    [introVideoUrl, outroVideoUrl, sellerName],
+    [audioClip, introVideoUrl, outroVideoUrl, sellerName],
   )
 
   const selectedOutroLabel = useMemo(() => {
@@ -111,9 +119,11 @@ export default function Animation() {
   const openTemplate = useCallback((templateId) => {
     setSelectedTemplateId(templateId)
     setSellerName('')
+    setOutputName('')
     setIntroFileName('')
     setIntroVideoUrl('')
     setOutroVideoUrl('')
+    setAudioClip(null)
     setSelectedSellerId('')
     setSellerVideos([])
     setUploadStatus(initialStatus)
@@ -191,34 +201,48 @@ export default function Animation() {
     }
   }, [])
 
+  const handleAudioClipChange = useCallback((nextAudioClip) => {
+    setAudioClip(nextAudioClip)
+  }, [])
+
   const handleRender = useCallback(async () => {
     if (!selectedTemplate) return
+    const cleanOutputName = outputName.trim()
+
+    if (cleanOutputName.length < 3) {
+      setRenderStatus({
+        type: 'error',
+        message: 'Escribe un nombre para guardar el video en S3.',
+      })
+      return
+    }
 
     setIsRendering(true)
     setRenderDownloadUrl('')
-    setRenderStatus({ type: 'loading', message: 'Preparando render...' })
+    setRenderStatus({ type: 'loading', message: 'Renderizando y subiendo a S3...' })
 
     try {
       const result = await renderAnimationVideo({
         compositionId: selectedTemplate.id,
         templateId: selectedTemplate.id,
         inputProps: previewProps,
+        outputName: cleanOutputName,
+        idAdmin: user?.id,
+        idSound: audioClip?.audioid,
+        audioConfig: audioClip
+          ? {
+              audioid: audioClip.audioid,
+              startTime: audioClip.startTime,
+              duration: audioClip.duration,
+            }
+          : undefined,
       })
 
       setRenderDownloadUrl(result.downloadUrl || '')
       setRenderStatus({
         type: 'success',
-        message: result.message || 'Video renderizado. Ya puedes descargar el MP4.',
+        message: result.message || 'Video renderizado y subido a S3.',
       })
-
-      if (result.downloadUrl) {
-        const link = document.createElement('a')
-        link.href = result.downloadUrl
-        link.download = result.fileName || 'video-renderizado.mp4'
-        document.body.appendChild(link)
-        link.click()
-        link.remove()
-      }
     } catch (error) {
       setRenderStatus({
         type: 'error',
@@ -227,7 +251,7 @@ export default function Animation() {
     } finally {
       setIsRendering(false)
     }
-  }, [previewProps, selectedTemplate])
+  }, [audioClip, outputName, previewProps, selectedTemplate, user?.id])
 
   if (selectedTemplate) {
     const aspectRatio = `${selectedTemplate.width} / ${selectedTemplate.height}`
@@ -296,7 +320,7 @@ export default function Animation() {
                 id="seller-name"
                 value={sellerName}
                 onChange={(event) => setSellerName(event.target.value)}
-                placeholder="Mi Producto"
+                placeholder="Vendedor"
                 className="studio-focus-ring mt-2 h-11 w-full rounded-md border border-border-soft bg-input px-3 text-sm text-foreground placeholder:text-muted-foreground"
               />
 
@@ -388,20 +412,36 @@ export default function Animation() {
               ) : null}
             </section>
 
+            <AudioClipSelector value={audioClip} onChange={handleAudioClipChange} />
+
             <section className="rounded-lg border border-border-subtle bg-card p-4 shadow-sm">
               <p className="studio-label">Salida</p>
+              <label className="mt-4 block text-sm font-semibold" htmlFor="output-name">
+                Nombre del video
+              </label>
+              <input
+                id="output-name"
+                value={outputName}
+                onChange={(event) => setOutputName(event.target.value)}
+                placeholder="venta-julio-remotion"
+                className="studio-focus-ring mt-2 h-11 w-full rounded-md border border-border-soft bg-input px-3 text-sm text-foreground placeholder:text-muted-foreground"
+              />
+
               <div className="mt-4 rounded-md border border-border-soft bg-input p-3">
                 <div className="flex items-start gap-3">
                   <FileVideo className="mt-0.5 text-muted-foreground" size={18} />
                   <div className="min-w-0">
                     <p className="truncate text-sm font-semibold">
-                      {sellerName.trim() || selectedSeller?.name || 'Mi Producto'}
+                      {sellerName.trim() || selectedSeller?.name || 'Vendedor'}
                     </p>
                     <p className="mt-1 truncate text-xs text-muted-foreground">
                       Intro: {introFileName || 'default-intro.mp4'}
                     </p>
                     <p className="mt-1 truncate text-xs text-muted-foreground">
                       Outro: {selectedOutroLabel}
+                    </p>
+                    <p className="mt-1 truncate text-xs text-muted-foreground">
+                      Audio: {audioClip ? `${audioClip.startTime}s / ${audioClip.duration}s` : 'sin musica'}
                     </p>
                   </div>
                 </div>
@@ -410,7 +450,7 @@ export default function Animation() {
               <button
                 type="button"
                 onClick={handleRender}
-                disabled={isRendering || isUploading || isLoadingSellerVideos}
+                disabled={isRendering || isUploading || isLoadingSellerVideos || outputName.trim().length < 3}
                 className="studio-focus-ring mt-4 inline-flex h-11 w-full items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {isRendering ? <Loader2 className="animate-spin" size={18} /> : <Play size={18} />}
@@ -436,7 +476,7 @@ export default function Animation() {
                   download
                   className="studio-focus-ring mt-3 inline-flex h-10 w-full items-center justify-center rounded-md border border-border-subtle bg-card px-3 text-sm font-bold text-foreground transition hover:bg-accent"
                 >
-                  Descargar MP4
+                  Ver o descargar desde S3
                 </a>
               ) : null}
             </section>

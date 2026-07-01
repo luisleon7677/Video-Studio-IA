@@ -4,7 +4,7 @@ import { TemplateRepository } from '../../domain/repositories/template.repositor
 export interface UpdateTemplateInput {
   id: number;
   name: string;
-  content: string;
+  url: string;
 }
 
 export class UpdateTemplateUseCase {
@@ -13,13 +13,13 @@ export class UpdateTemplateUseCase {
   async execute(input: UpdateTemplateInput): Promise<Template> {
     const existing = await this.templateRepository.findById(input.id);
     if (!existing) {
-      throw new Error('Plantilla no encontrada');
+      throw new Error('Audio no encontrado');
     }
 
     const template = new Template(
       input.id,
       input.name,
-      input.content,
+      input.url,
       existing.id_admin,
       existing.createdAt,
       existing.updatedAt,

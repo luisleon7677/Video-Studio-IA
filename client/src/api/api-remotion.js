@@ -33,7 +33,15 @@ export async function uploadAnimationVideo({ file, templateId, name }) {
   return response.json()
 }
 
-export async function renderAnimationVideo({ compositionId, templateId, inputProps }) {
+export async function renderAnimationVideo({
+  compositionId,
+  templateId,
+  inputProps,
+  outputName,
+  idAdmin,
+  idSound,
+  audioConfig,
+}) {
   const response = await fetch(`${API_BASE}/videos/animations/render`, {
     method: 'POST',
     headers: withAuthHeaders({
@@ -43,6 +51,10 @@ export async function renderAnimationVideo({ compositionId, templateId, inputPro
       compositionId,
       templateId,
       inputProps,
+      outputName,
+      idAdmin,
+      idSound,
+      audioConfig,
     }),
   })
 

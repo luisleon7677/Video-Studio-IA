@@ -2,7 +2,7 @@ export class Template {
   constructor(
     public readonly id: number | null,
     public name: string,
-    public content: string,
+    public url: string,
     public id_admin: number | null,
     public createdAt: Date | null = null,
     public updatedAt: Date | null = null,
@@ -16,7 +16,7 @@ export class Template {
   static fromPersistence(row: {
     id: number;
     name: string | null;
-    content: string | null;
+    url: string | null;
     id_admin: number | null;
     create_at: Date | null;
     update_at: Date | null;
@@ -24,7 +24,7 @@ export class Template {
     return new Template(
       row.id,
       row.name ?? '',
-      row.content ?? '',
+      row.url ?? '',
       row.id_admin,
       row.create_at,
       row.update_at,
@@ -36,8 +36,8 @@ export class Template {
     if (!this.name || this.name.trim().length < 3) {
       throw new Error('El nombre debe tener al menos 3 caracteres');
     }
-    if (!this.content || this.content.trim().length < 3) {
-      throw new Error('El contenido debe tener al menos 3 caracteres');
+    if (!this.url || this.url.trim().length < 3) {
+      throw new Error('La URL del audio es obligatoria');
     }
   }
 }

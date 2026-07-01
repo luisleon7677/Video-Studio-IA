@@ -7,7 +7,7 @@ export class GetTemplateByIdUseCase {
   async execute(id: number): Promise<Template> {
     const template = await this.templateRepository.findById(id);
     if (!template) {
-      throw new Error('Plantilla no encontrada');
+      throw new Error('Audio no encontrado');
     }
     return template;
   }

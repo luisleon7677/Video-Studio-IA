@@ -10,7 +10,7 @@ import type { TemplateProps } from "../../types/template";
 
 type SceneProps = Pick<TemplateProps, "introVideoUrl" | "nombre">;
 
-export const Scene = ({ introVideoUrl, nombre = "Mi Producto" }: SceneProps) => {
+export const Scene = ({ introVideoUrl, nombre = "Vendedor" }: SceneProps) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 

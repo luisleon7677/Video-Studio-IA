@@ -1,4 +1,4 @@
-import { IsNotEmpty, MinLength } from 'class-validator';
+import { IsNotEmpty, IsUrl, MinLength } from 'class-validator';
 
 export class UpdateTemplateDto {
   @IsNotEmpty()
@@ -7,5 +7,6 @@ export class UpdateTemplateDto {
 
   @IsNotEmpty()
   @MinLength(3)
-  content: string;
+  @IsUrl()
+  url: string;
 }

@@ -1,5 +1,6 @@
 import { Sequence, staticFile } from "remotion";
 import { Outro } from "../../components/Outro";
+import { BackgroundMusic } from "../../components/BackgroundMusic";
 import { TransitionFade } from "../../components/TransitionFade";
 import {
   INTRO_FRAMES,
@@ -9,12 +10,15 @@ import {
 import type { TemplateProps } from "../../types/template";
 import { Scene } from "./Scene";
 
-const DEFAULT_NAME = "Mi Producto";
+const DEFAULT_NAME = "Vendedor";
 import React from "react";
 export const ModernSale = ({
   nombre = DEFAULT_NAME,
   introVideoUrl,
   outroVideoUrl,
+  music,
+  musicStart,
+  musicDuration,
 }: TemplateProps) => {
   const resolvedIntroVideoUrl =
     introVideoUrl ?? staticFile("videos/default-intro.mp4");
@@ -23,6 +27,12 @@ export const ModernSale = ({
 
   return (
     <>
+      <BackgroundMusic
+        music={music}
+        musicStart={musicStart}
+        musicDuration={musicDuration}
+      />
+
       <Sequence durationInFrames={INTRO_FRAMES}>
         <Scene introVideoUrl={resolvedIntroVideoUrl} nombre={nombre} />
       </Sequence>

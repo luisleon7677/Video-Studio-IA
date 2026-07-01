@@ -28,7 +28,7 @@ export class CreateVideoDto {
   @Type(() => Number)
   @IsInt()
   @IsPositive()
-  idTemplate?: number;
+  idSound?: number;
 
   @IsOptional()
   @Type(() => Number)
@@ -47,6 +47,10 @@ export class CreateVideoDto {
   @IsInt()
   @IsPositive()
   idSeller?: number;
+
+  @IsOptional()
+  @IsObject()
+  config?: Record<string, unknown>;
 }
 
 export class CreateCapcutVideoDto {
@@ -115,6 +119,11 @@ export class UploadAnimationVideoDto {
 export class RenderAnimationVideoDto {
   @IsNotEmpty()
   @IsString()
+  @MinLength(3)
+  outputName: string;
+
+  @IsNotEmpty()
+  @IsString()
   compositionId: string;
 
   @IsOptional()
@@ -124,4 +133,26 @@ export class RenderAnimationVideoDto {
   @IsOptional()
   @IsObject()
   inputProps?: Record<string, unknown>;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @IsPositive()
+  idSound?: number;
+
+  @IsOptional()
+  @IsObject()
+  audioConfig?: Record<string, unknown>;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @IsPositive()
+  idAdmin?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @IsPositive()
+  status?: number;
 }

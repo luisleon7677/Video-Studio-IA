@@ -6,17 +6,17 @@ export class DeleteTemplateUseCase {
   async execute(id: number): Promise<void> {
     const existing = await this.templateRepository.findById(id);
     if (!existing) {
-      throw new Error('Plantilla no encontrada');
+      throw new Error('Audio no encontrado');
     }
 
-    const videosCount = await this.templateRepository.countVideosByTemplateId(id);
+    const videosCount = await this.templateRepository.countVideosBySoundId(id);
     if (videosCount > 0) {
-      throw new Error('No se puede eliminar: la plantilla está en uso por videos');
+      throw new Error('No se puede eliminar: el audio esta en uso por videos');
     }
 
     const deleted = await this.templateRepository.deleteById(id);
     if (!deleted) {
-      throw new Error('Plantilla no encontrada');
+      throw new Error('Audio no encontrado');
     }
   }
 }
